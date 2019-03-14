@@ -17,9 +17,9 @@ public class Graph {
         }
     }
 
-    public void addEdge(int src, int destination, int weight){
-        Vertex source = vertices.get(src);
-        source.getNeighbours().add(new Edge(vertices.get(destination), weight));
+    public void addEdge(EdgeSimple edge){
+        Vertex source = vertices.get(edge.getSource());
+        source.getNeighbours().add(new Edge(vertices.get(edge.getDestination()), edge.getWeight()));
     }
 
     public ArrayList<Vertex> getVertices() {

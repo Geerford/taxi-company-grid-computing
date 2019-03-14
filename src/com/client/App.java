@@ -1,6 +1,7 @@
 package com.client;
 
 import com.application.*;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -8,16 +9,22 @@ import java.util.List;
 
 public class App {
     private InputTask task;
+    private Graph graph;
 
-    public App(InputTask task){
-        this.task = task;
+    public App(String task){
+        this.task = new Gson().fromJson(task, InputTask.class);
+        try{
+            graph = initGraph(this.task.getCountVertex(), this.task.getEdges());
+        }
+        catch (NullPointerException ex){
+            System.out.println("The graph is incorrectly initialized.");
+        }
     }
 
     public OutputTask perform(){
         List<Combination> combinations = new ArrayList<>();
         for(var combination : task.getCombinations()){
             int source = task.getTaxiWeight();
-            Graph graph = task.getGraph();
             double resultWeight = 0;
             if(combination != null && combination.size() != 0){
                 LinkedList<Integer> resultCombination = new LinkedList<>();
@@ -51,5 +58,16 @@ public class App {
             }
         }
         return new OutputTask(combinations);
+    }
+
+    private static Graph initGraph(int numberVertices, LinkedList<EdgeSimple> edges){
+        Graph graph = new Graph(numberVertices);
+        for(EdgeSimple edge : edges){
+            if(edge.getSource() > numberVertices || edge.getDestination() > numberVertices){
+                throw new NullPointerException();
+            }
+            graph.addEdge(edge);
+        }
+        return graph;
     }
 }
