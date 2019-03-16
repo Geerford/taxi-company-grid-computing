@@ -18,7 +18,7 @@ public class App {
         for (Taxi taxi : field.getTaxis()){
             List<LinkedList<Integer>> combinations = new ArrayList<>();
             //Generate combination
-            int count = 0, chunk = 200000, remainder, maxSizeCombinations = 0;
+            int count = 0, chunk = 50000, remainder, maxSizeCombinations = 0;
             while(true){
                 maxSizeCombinations += chunk;
                 if(countCombination - maxSizeCombinations < chunk){
@@ -94,17 +94,11 @@ public class App {
         for(OutputTask task : outputTasks){
             collector.addTask(task);
         }
-
         List<Combination> combinations = getMinCombinations(collector);
-        //TODO DEBUG_START
-        //showDistance(combinations);
-        //TODO DEBUG_END
-        LinkedList<Combination> best = compareTaxis(combinations);
-        //TODO DEBUG_START
+        showDistance(combinations);
         System.out.println("________________________");
+        LinkedList<Combination> best = compareTaxis(combinations);
         showDistance(best);
-        //TODO DEBUG_END
-
     }
 
     private static void saveToJson(String fileName, InputTask task){
@@ -563,19 +557,19 @@ public class App {
                 new Passenger(new Position(0, 1)),
                 new Passenger(new Position(2, 4)),
                 new Passenger(new Position(2, 1)),
-                new Passenger(new Position(5, 0))
-                /*
+                new Passenger(new Position(5, 0)),
+
                 new Passenger(new Position(79, 12)),
                 new Passenger(new Position(52, 66)),
                 new Passenger(new Position(36, 4)),
                 new Passenger(new Position(17, 82)),
                 new Passenger(new Position(35, 11)),
-
+                /*
                 new Passenger(new Position(5, 4)),
                 new Passenger(new Position(5, 1)),
                 new Passenger(new Position(4, 1)),
                 new Passenger(new Position(34, 21)),
-                new Passenger(new Position(99, 1)),*/
+                new Passenger(new Position(99, 1))*/
 
                 //new Passenger(new Position(90, 99)),
                 //new Passenger(new Position(44, 15)),
@@ -600,35 +594,78 @@ public class App {
         }
         LinkedList<Combination> best = new LinkedList<>();
         Combination bestCombination = combinations.get(combinations.size() - 1);
+        LinkedList<LinkedList<Combination>> betterCombinationsList = new LinkedList<>();
         for(int i = combinations.size() - 2; i >= 0; i--){
             LinkedList<Combination> betterCombinations = new LinkedList<>();
             LinkedList<Integer> notVisitedPassengersTemp = new LinkedList<>(notVisitedPassengers);
             var current = combinations.get(i);
             betterCombinations.addLast(current);
             var currentPassengers = current.getPassengers();
-            double currentWeight = current.getCost();
             for(var item : currentPassengers){
                 notVisitedPassengersTemp.remove(item);
             }
+            LinkedList<Integer> currentTaxis = new LinkedList<>();
+            currentTaxis.add(current.getTaxiIndex());
             int checker = current.getPassengers().size();
+            //Get all not visited combinations of desired length.
             while(notVisitedPassengersTemp.size() > 0){
-                var remainder = notVisitedPassengersTemp.remove();
+                var remainder = notVisitedPassengersTemp.getFirst();
                 var remainderCombination = combinations.stream().filter(c -> c.getPassengers()
-                        .contains(remainder)).collect(Collectors.toList());
+                        .contains(remainder) && c.getPassengers().size() <= notVisitedPassengersTemp.size())
+                        .collect(Collectors.toList());
+                notVisitedPassengersTemp.remove();
                 for(Combination combination : remainderCombination){
-                    if(combination.getTaxiIndex() != current.getTaxiIndex()){
-                        currentWeight += combination.getCost();
-                        betterCombinations.addLast(combination);
+                    boolean check = true;
+                    for(Integer passenger : combination.getPassengers()){
+                        if(notVisitedPassengersTemp.contains(passenger)){
+                            check = false;
+                        }
+                    }
+                    if(check && !currentTaxis.contains(combination.getTaxiIndex())){
                         checker += combination.getPassengers().size();
+                        betterCombinations.addLast(combination);
+                        currentTaxis.add(combination.getTaxiIndex());
                     }
                 }
             }
-            if(checker == bestCombination.getPassengers().size() && currentWeight < bestCombination.getCost()){
-                best.addAll(betterCombinations);
+            //Check passages for non-repetition.
+            boolean check = true;
+            LinkedList<Integer> visitedPassengers = new LinkedList<>();
+            for(var combination : betterCombinations){
+                for(Integer item : combination.getPassengers()){
+                    if(visitedPassengers.contains(item)){
+                        check = false;
+                    }
+                    else{
+                        visitedPassengers.add(item);
+                    }
+                }
+            }
+            if(check && checker == bestCombination.getPassengers().size()){
+                betterCombinationsList.add(betterCombinations);
             }
         }
-        if(best.size() == 0){
-            best.addLast(bestCombination);
+        //Get best combinations.
+        LinkedList<Combination> bestCombinationsTemp = new LinkedList<>();
+        double bestWeight = Double.POSITIVE_INFINITY;
+        for(var combinationList : betterCombinationsList){
+            double bestWeightTemp = 0;
+            LinkedList<Combination> bestCombinationTemp = new LinkedList<>();
+            for(var betterCombinations : combinationList){
+                bestWeightTemp += betterCombinations.getCost();
+                bestCombinationTemp.add(betterCombinations);
+            }
+            if(bestWeightTemp < bestWeight){
+                bestCombinationsTemp.clear();
+                bestCombinationsTemp.addAll(bestCombinationTemp);
+                bestWeight = bestWeightTemp;
+            }
+        }
+        if(bestCombinationsTemp.size() == 0){
+            best.add(bestCombination);
+        }
+        else{
+            best.addAll(bestCombinationsTemp);
         }
         return best;
     }
