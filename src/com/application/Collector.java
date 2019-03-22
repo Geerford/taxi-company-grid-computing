@@ -6,8 +6,8 @@ import java.util.List;
 public class Collector {
     private List<Combination> combinations = new ArrayList<>();
 
-    public void addTask(OutputTask task){
-        combinations.addAll(task.getCombinations());
+    public void addTask(List<Combination> task){
+        combinations.addAll(task);
     }
 
     public List<Combination> getCombinations(){

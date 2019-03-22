@@ -15,6 +15,10 @@ public class EdgeSimple {
         return weight;
     }
 
+    public void setWeight(int weight){
+        this.weight = weight;
+    }
+
     public int getDestination() {
         return destination;
     }

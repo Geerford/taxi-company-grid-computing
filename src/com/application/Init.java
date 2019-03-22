@@ -1,12 +1,18 @@
 package com.application;
 
+import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.Objects;
 
 public final class Init {
     private static int numberTaxis;
     private static int numberPassengers;
+    private static int numberVertices;
+    private static LinkedList<EdgeSimple> edges = new LinkedList<>();
+    private static Field field;
 
-    public static Field initField(){
+
+    public static void initField(){
         Taxi[] T = new Taxi[]{
                 new Taxi(0),
                 new Taxi(1),
@@ -40,11 +46,10 @@ public final class Init {
         };
         numberTaxis = T.length;
         numberPassengers = P.length;
-        return new Field(T, P);
+        field = new Field(T, P);
     }
 
-    public static LinkedList<EdgeSimple> createGraph(){
-        LinkedList<EdgeSimple> edges = new LinkedList<>();
+    public static void createGraph(){
         //№0
         edges.addLast(new EdgeSimple(0, 1,7));
         edges.addLast(new EdgeSimple(0, 2,9));
@@ -473,14 +478,55 @@ public final class Init {
         edges.addLast(new EdgeSimple(63, 57,1));
         edges.addLast(new EdgeSimple(81, 87,1));
         edges.addLast(new EdgeSimple(87, 81,1));
-        return edges;
+
+        numberVertices = Objects.requireNonNull(edges.stream().max(Comparator.comparing(EdgeSimple::getSource)).orElse(null)).getSource() + 1;
     }
 
     public static int getNumberTaxis() {
         return numberTaxis;
     }
 
+    public static void setNumberTaxis(int number){
+        numberTaxis = number;
+    }
+
     public static int getNumberPassengers() {
         return numberPassengers;
+    }
+
+    public static void setNumberPassengers(int number){
+        numberPassengers = number;
+    }
+
+    public static LinkedList<EdgeSimple> getEdges(){
+        return edges;
+    }
+
+    public static boolean isInGraph(int a, int b){
+        boolean check = false;
+        for(var edge : edges){
+            if(edge.getSource() == a && edge.getDestination() == b || edge.getDestination() == b &&
+                    edge.getSource() == a){
+                check = true;
+                break;
+            }
+        }
+        return check;
+    }
+
+    public static Field getField() {
+        return field;
+    }
+
+    public static void setField(Field field) {
+        Init.field = field;
+    }
+
+    public static int getNumberVertices() {
+        return numberVertices;
+    }
+
+    public static void setNumberVertices(int numberVertices) {
+        Init.numberVertices = numberVertices;
     }
 }

@@ -8,22 +8,25 @@ public class Passenger {
         this.position = position;
     }
 
-    public Passenger(Passenger passenger){
-        this.index = passenger.getIndex();
-        this.position = passenger.getPosition();
-    }
-
     public Passenger(int index, Position position){
         this.index = index;
         this.position = position;
     }
 
+
     public int getIndex() {
         return index;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
     }
 
     public Position getPosition() {
         return position;
     }
 
+    public void setPosition(Position position) {
+        this.position = position;
+    }
 }

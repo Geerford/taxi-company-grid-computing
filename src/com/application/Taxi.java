@@ -17,7 +17,15 @@ public class Taxi {
         return index;
     }
 
+    public void setIndex(int index) {
+        this.index = index;
+    }
+
     public int getWeight() {
         return weight;
+    }
+
+    public void setWeight(int weight) {
+        this.weight = weight;
     }
 }

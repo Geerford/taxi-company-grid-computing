@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="material-ui-swing-0.9.6-jar-with-dependencies">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../material-ui-swing-0.9.6-jar-with-dependencies.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../material-ui-swing-0.9.6-jar-with-dependencies.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../material-ui-swing-0.9.6-jar-with-dependencies.jar!/main/java" />
+    </SOURCES>
+  </library>
+</component>

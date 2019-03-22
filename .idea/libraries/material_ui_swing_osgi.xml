@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="material-ui-swing-osgi">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../material-ui-swing-osgi.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../material-ui-swing.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

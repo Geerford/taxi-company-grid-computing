@@ -6,7 +6,7 @@ public class Field {
     private int numberTaxis;
     private int numberPassengers;
     private ArrayList<Taxi> taxis;
-    private  ArrayList<Passenger> passengers;
+    private ArrayList<Passenger> passengers;
 
     public Field(Taxi[] taxis, Passenger[] passengers){
         numberTaxis = taxis.length;
@@ -25,8 +25,16 @@ public class Field {
         return numberTaxis;
     }
 
+    public void setNumberTaxis(int numberTaxis){
+        this.numberTaxis = numberTaxis;
+    }
+
     public int getNumberPassengers(){
         return numberPassengers;
+    }
+
+    public void setNumberPassengers(int numberPassengers){
+        this.numberPassengers = numberPassengers;
     }
 
     public ArrayList<Taxi> getTaxis(){

@@ -1,22 +1,54 @@
 package com.application;
 
 import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
 
 import java.io.*;
+import java.lang.reflect.Type;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.minBy;
 
 public class App {
-    private static int numberPassengers, numberTaxis, numberVertices = 100;
 
-    public static void main(String[] args) {
-        Field field = Init.initField();
-        numberPassengers = Init.getNumberPassengers();
-        numberTaxis = Init.getNumberTaxis();
+    public static LinkedList<Combination> collectOutputFiles(int numberFiles){
+        int count = 0;
+        Collector collector = new Collector();
+        try {
+            for(int i = 1; i <= numberFiles; i++){
+                JsonReader reader = new JsonReader(new FileReader(String.format("output-%s.json", i)));
+
+                Type collectionType = new TypeToken<ArrayList<Combination>>(){}.getType();
+
+                List<Combination> task = new ArrayList<>(new Gson().fromJson(reader, collectionType));
+                collector.addTask(task);
+                ++count;
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        if(count == numberFiles){
+            List<Combination> combinations = getMinCombinations(collector);
+            return compareTaxis(combinations);
+        }
+        else{
+            return null;
+        }
+    }
+
+    public static int generateTasks() {
+        Field field = Init.getField();
         int countCombination = (int)Math.pow(2, field.getNumberPassengers()) - 1; //O(2^N - 1)
-        List<String> tasks = new ArrayList<>();
+        int taskCount = 0;
+        createJob();
+        int numberVertices = Init.getNumberVertices();
+        LinkedList<EdgeSimple> graph = Init.getEdges();
         for (Taxi taxi : field.getTaxis()){
             List<LinkedList<Integer>> combinations = new ArrayList<>();
             //Generate combination
@@ -54,53 +86,58 @@ public class App {
             }
             //Divide combinations into parts for transfer and normalize it
             for(int i = 0; i <= combinationsResult.size(); i+=chunk){
-                LinkedList<EdgeSimple> graph = Init.createGraph();
                 if(i + chunk > combinationsResult.size()){
                     if(i < chunk){
-                        InputTask task = new InputTask(field.getPassengers(),
-                                new ArrayList<>(combinationsResult), taxi.getIndex(),
-                                taxi.getWeight(), numberVertices, graph);
-                        String fileName= "Output.json";
+                        InputTask task = new InputTask(field.getPassengers(), new ArrayList<>(combinationsResult),
+                                taxi.getIndex(), taxi.getWeight(), numberVertices, graph);
+                        String fileName = String.format("input-%s.json", ++taskCount);
+                        writeTask(taskCount);
                         saveToJson(fileName, task);
-                        tasks.add(new Gson().toJson(task));
                     }
                     else{
                         InputTask newTaskTest = new InputTask(field.getPassengers(),
-                                new ArrayList<>(combinationsResult.subList(i-chunk, combinationsResult.size())), taxi.getIndex(),
-                                taxi.getWeight(), numberVertices, graph);
-                        String fileName= "Output.json";
+                                new ArrayList<>(combinationsResult.subList(i-chunk, combinationsResult.size())),
+                                taxi.getIndex(),taxi.getWeight(), numberVertices, graph);
+                        String fileName = String.format("input-%s.json", ++taskCount);
+                        writeTask(taskCount);
                         saveToJson(fileName, newTaskTest);
-                        tasks.add(new Gson().toJson(newTaskTest));
                     }
                 }
                 else{
                     InputTask newTaskTest = new InputTask(field.getPassengers(),
                             new ArrayList<>(combinationsResult.subList(i, i + chunk)), taxi.getIndex(), taxi.getWeight(),
                             numberVertices, graph);
-                    String fileName= "Output.json";
+                    String fileName = String.format("input-%s.json", ++taskCount);
+                    writeTask(taskCount);
                     saveToJson(fileName, newTaskTest);
-                    tasks.add(new Gson().toJson(newTaskTest));
                 }
             }
         }
-        //Emulation of algorithm execution
-        LinkedList<OutputTask> outputTasks = new LinkedList<>();
-        for(String task : tasks){
-            com.client.App client = new com.client.App(task);
-            OutputTask outputTask = client.perform();
-            outputTasks.addLast(outputTask);
-        }
-        //Collecting of results
-        Collector collector = new Collector();
+        return taskCount;
+    }
 
-        for(OutputTask task : outputTasks){
-            collector.addTask(task);
+    private static void createJob(){
+        try {
+            Files.write(Paths.get("TaxiJob.jdf"), Arrays.asList("job:", "label: TaxiJob"),
+                    Charset.forName("UTF-8"));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        List<Combination> combinations = getMinCombinations(collector);
-        showDistance(combinations);
-        System.out.println("________________________");
-        LinkedList<Combination> best = compareTaxis(combinations);
-        showDistance(best);
+    }
+
+    private static void writeTask(int number){
+        List<String> lines = new ArrayList<>();
+        lines.add("task:");
+        lines.add("init: store app.jar app.jar");
+        lines.add(String.format("store input-%s.json input-%s.json", number, number));
+        lines.add(String.format("remote: java -jar app.jar input-%s.json output-$TASK.json", number));
+        lines.add("final: get output-$TASK.json output-$TASK.json");
+        try {
+            Files.write(Paths.get("TaxiJob.jdf"), lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private static void saveToJson(String fileName, InputTask task){
@@ -112,15 +149,9 @@ public class App {
         }
     }
 
-    private static void showDistance(List<Combination> combinations){
-        for(Combination combination : combinations){
-            System.out.println("Taxi№" + combination.getTaxiIndex() + " || Passengers: " + combination.getPassengers() +
-                    " || Path: " + combination.getPath() + " = " + combination.getCost());
-        }
-    }
-
     private static LinkedList<Combination> compareTaxis(List<Combination> combinations){
         LinkedList<Integer> notVisitedPassengers = new LinkedList<>();
+        int numberPassengers = Init.getNumberPassengers();
         for(int i = 0; i < numberPassengers; i++){
             notVisitedPassengers.addLast(i);
         }
