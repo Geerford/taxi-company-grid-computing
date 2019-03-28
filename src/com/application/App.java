@@ -16,30 +16,30 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.minBy;
 
 public class App {
-
     public static LinkedList<Combination> collectOutputFiles(int numberFiles){
-        int count = 0;
+        int count;
         Collector collector = new Collector();
         try {
+            do {
+                count = 0;
+                for(int i = 1; i <= numberFiles; i++){
+                    File file = new File(String.format("output-%s.json", i));
+                    if(file.exists() && !file.isDirectory()) {
+                        ++count;
+                    }
+                }
+            } while (count != numberFiles);
             for(int i = 1; i <= numberFiles; i++){
                 JsonReader reader = new JsonReader(new FileReader(String.format("output-%s.json", i)));
-
                 Type collectionType = new TypeToken<ArrayList<Combination>>(){}.getType();
-
                 List<Combination> task = new ArrayList<>(new Gson().fromJson(reader, collectionType));
                 collector.addTask(task);
-                ++count;
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        if(count == numberFiles){
-            List<Combination> combinations = getMinCombinations(collector);
-            return compareTaxis(combinations);
-        }
-        else{
-            return null;
-        }
+        List<Combination> combinations = getMinCombinations(collector);
+        return compareTaxis(combinations);
     }
 
     public static int generateTasks() {
@@ -128,8 +128,8 @@ public class App {
     private static void writeTask(int number){
         List<String> lines = new ArrayList<>();
         lines.add("task:");
-        lines.add("init: store app.jar app.jar");
-        lines.add(String.format("store input-%s.json input-%s.json", number, number));
+        lines.add("init: put app.jar app.jar");
+        lines.add(String.format("put input-%s.json input-%s.json", number, number));
         lines.add(String.format("remote: java -jar app.jar input-%s.json output-$TASK.json", number));
         lines.add("final: get output-$TASK.json output-$TASK.json");
         try {

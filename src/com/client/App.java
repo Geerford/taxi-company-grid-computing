@@ -53,7 +53,8 @@ public class App {
                             resultWeight += destinationVertex.getMinDistance();
                             resultPassengers.addLast(passenger.getIndex());
                         }
-                        combinations.add(new Combination(task.getTaxiIndex(), resultPassengers, resultCombination, resultWeight));
+                        combinations.add(new Combination(task.getTaxiIndex(), resultPassengers, resultCombination,
+                                resultWeight));
                     }
                 }
                 try (Writer writer = new FileWriter(fileNameOutput)) {
@@ -77,6 +78,7 @@ public class App {
             if(edge.getSource() > numberVertices || edge.getDestination() > numberVertices){
                 throw new NullPointerException();
             }
+            System.out.println(edges.size() + "  " + edge.getDestination() + "   " + edge.getSource());
             graph.addEdge(edge);
         }
         return graph;

@@ -6,9 +6,12 @@ import mdlaf.animation.MaterialUIMovement;
 import mdlaf.utils.MaterialColors;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.io.*;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -51,9 +54,7 @@ public class GUIFrame {
     private JTextField graphDeleteVertexATextField;
     private JTextField graphDeleteVertexBTextField;
     private JButton graphDeleteButton;
-    private JButton createTasksButton;
-    private JButton createJobButton;
-    private JButton collectButton;
+    private JButton solveJobButton;
     private JLabel statusLabel;
     private JTable tasksTable;
     private JPanel taxisTab;
@@ -107,51 +108,60 @@ public class GUIFrame {
         MaterialUIMovement.add (taxisDeleteButton, MaterialColors.BLUE_GRAY_200);
         MaterialUIMovement.add (passengersDeleteButton, MaterialColors.BLUE_GRAY_200);
         MaterialUIMovement.add (graphDeleteButton, MaterialColors.BLUE_GRAY_200);
-        MaterialUIMovement.add (createJobButton, MaterialColors.BLUE_GRAY_200);
-        MaterialUIMovement.add (collectButton, MaterialColors.BLUE_GRAY_200);
+        MaterialUIMovement.add (solveJobButton, MaterialColors.BLUE_GRAY_200);
+        //INIT TABLES
         taxisTable.setModel(initTaxis());
         passengersTable.setModel(initPassengers());
         graphTable.setModel(initGraph());
+        //INIT FRAME
         frame.pack();
         frame.setVisible(true);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        //RESULTS
-        createJobButton.addActionListener(e -> {
-            countTasks = App.generateTasks();
-            if(countTasks > 0){
-                collectButton.setVisible(true);
-            }
-        });
-        collectButton.addActionListener(e -> {
-            LinkedList<Combination> bestCombinations = App.collectOutputFiles(countTasks);
-            if(bestCombinations != null){
-                String[] columnNames = {"Taxi", "Passengers", "Path", "Cost"};
-                Object[][] data = new Object[bestCombinations.size()][columnNames.length];
-                DefaultTableModel tableModel = new DefaultTableModel();
-                for(var i : columnNames){
-                    tableModel.addColumn(i);
-                }
-                List<String> lines = new ArrayList<>();
-                for(int i = 0; i < bestCombinations.size(); i++){
-                    data[i][0] = bestCombinations.get(i).getTaxiIndex();
-                    data[i][1] = bestCombinations.get(i).getPassengers();
-                    data[i][2] = bestCombinations.get(i).getPath();
-                    data[i][3] = bestCombinations.get(i).getCost();
-                    tableModel.addRow(data[i]);
-                    lines.add("Taxi№" + bestCombinations.get(i).getTaxiIndex() + " || Passengers: " +
-                            bestCombinations.get(i).getPassengers() + " || Path: " +
-                            bestCombinations.get(i).getPath() + " = " + bestCombinations.get(i).getCost());
-                }
-                tasksTable.setModel(tableModel);
 
-                try {
-                    Files.write(Paths.get("result.txt"), lines, Charset.forName("UTF-8"));
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
+        //RESULTS
+        solveJobButton.addActionListener(e -> {
+            deleteFiles();
+            //Generate new task
+            countTasks = App.generateTasks();
+            ProcessBuilder builder = new ProcessBuilder("bash", "-c", "../bin/mygrid addjob TaxiJob.jdf");
+            try {
+                Process process = builder.start();
+                process.waitFor();
+            } catch (IOException | InterruptedException e1) {
+                e1.printStackTrace();
             }
-            else{
-                statusLabel.setText("The number of tasks does not match");
+            //Collect all tasks
+            if(countTasks > 0){
+                LinkedList<Combination> bestCombinations = App.collectOutputFiles(countTasks);
+                if(bestCombinations != null){
+                    String[] columnNames = {"Taxi", "Passengers", "Path", "Cost"};
+                    Object[][] data = new Object[bestCombinations.size()][columnNames.length];
+                    DefaultTableModel tableModel = new DefaultTableModel();
+                    for(var i : columnNames){
+                        tableModel.addColumn(i);
+                    }
+                    List<String> lines = new ArrayList<>();
+                    for(int i = 0; i < bestCombinations.size(); i++){
+                        data[i][0] = bestCombinations.get(i).getTaxiIndex();
+                        data[i][1] = bestCombinations.get(i).getPassengers();
+                        data[i][2] = bestCombinations.get(i).getPath();
+                        data[i][3] = bestCombinations.get(i).getCost();
+                        tableModel.addRow(data[i]);
+                        lines.add("Taxi№" + bestCombinations.get(i).getTaxiIndex() + " || Passengers: " +
+                                bestCombinations.get(i).getPassengers() + " || Path: " +
+                                bestCombinations.get(i).getPath() + " = " + bestCombinations.get(i).getCost());
+                    }
+                    tasksTable.setModel(tableModel);
+
+                    try {
+                        Files.write(Paths.get("result.txt"), lines, Charset.forName("UTF-8"));
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+                else{
+                    statusLabel.setText("The number of tasks does not match");
+                }
             }
         });
         //TAXIS
@@ -293,15 +303,21 @@ public class GUIFrame {
                 LinkedList<EdgeSimple> edges = Init.getEdges();
                 int a = Integer.parseInt(graphAddVertexATextField.getText()), b = Integer.parseInt(graphAddVertexBTextField.getText()),
                         w = Integer.parseInt(graphAddWeightTextField.getText());
-                if(!Init.isInGraph(a, b)){
-                    edges.add(new EdgeSimple(a, b, w));
-                    edges.add(new EdgeSimple(b, a, w));
+                if(a != b && !Init.isInGraph(a, b)){
+                    int indexA = a, indexB = b;
+                    if(a > Init.getNumberVertices()){
+                        indexA = Init.getNumberVertices();
+                        Init.setNumberVertices(Init.getNumberVertices()+1);
+                    }
+                    if(b > Init.getNumberVertices()){
+                        indexB = Init.getNumberVertices();
+                        Init.setNumberVertices(Init.getNumberVertices()+1);
+                    }
+                    edges.add(new EdgeSimple(indexA, indexB, w));
+                    edges.add(new EdgeSimple(indexB, indexA, w));
                 }
-                if(a > Init.getNumberVertices()){
-                    Init.setNumberVertices(a);
-                }
-                if(b > Init.getNumberVertices()){
-                    Init.setNumberVertices(b);
+                else{
+                    throw new Exception();
                 }
             }
             catch (Exception ex){
@@ -317,8 +333,12 @@ public class GUIFrame {
         graphEditButton.addActionListener(e -> {
             try{
                 LinkedList<EdgeSimple> edges = Init.getEdges();
-                int a = Integer.parseInt(graphEditVertexATextField.getText()), b = Integer.parseInt(graphEditVertexBTextField.getText()),
+                int a = Integer.parseInt(graphEditVertexATextField.getText()),
+                        b = Integer.parseInt(graphEditVertexBTextField.getText()),
                         w = Integer.parseInt(graphEditWeightTextField.getText());
+                if(a == b){
+                    throw new Exception();
+                }
                 for(var edge : edges){
                     if(edge.getSource() == a && edge.getDestination() == b || edge.getSource() == b &&
                             edge.getDestination() == a ){
@@ -339,14 +359,13 @@ public class GUIFrame {
         graphDeleteButton.addActionListener(e -> {
             try{
                 LinkedList<EdgeSimple> edges = Init.getEdges();
-                int a = Integer.parseInt(graphDeleteVertexATextField.getText()), b = Integer.parseInt(graphDeleteVertexBTextField.getText());
-                for(int i = 0; i < edges.size(); i++){
-                    var edge = edges.get(i);
-                    if (edge.getSource() == a && edge.getDestination() == b || edge.getSource() == b ||
-                            edge.getDestination() == a){
-                        edges.remove(edge);
-                    }
+                int a = Integer.parseInt(graphDeleteVertexATextField.getText()),
+                        b = Integer.parseInt(graphDeleteVertexBTextField.getText());
+                if(a == b){
+                    throw new Exception();
                 }
+                edges.removeIf(edge -> edge.getSource() == a && edge.getDestination() == b || edge.getSource() == b &&
+                        edge.getDestination() == a);
             }
             catch (Exception ex){
                 statusLabel.setText("Error");
@@ -357,6 +376,12 @@ public class GUIFrame {
                 graphTable.setModel(initGraph());
             }
         });
+        //STATUS
+        ActionListener statusListener = e -> {
+            statusLabel.setText("");
+        };
+        Timer timer = new Timer(3000,statusListener);
+        timer.start();
     }
 
     public static void main(String[] args) {
@@ -369,6 +394,37 @@ public class GUIFrame {
             e.printStackTrace ();
         }
         new GUIFrame();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            public void run() {
+                deleteFiles();
+            }
+        }, "Shutdown-thread"));
+    }
+
+    private static void deleteFiles(){
+        //Delete old files
+        File file;
+        if(countTasks > 0){
+            for(int i = 1; i <= countTasks; i++){
+                file = new File(String.format("output-%s.json", i));
+                if(file.exists() && !file.isDirectory()) {
+                    file.delete();
+                }
+                file = new File(String.format("input-%s.json", i));
+                if(file.exists() && !file.isDirectory()) {
+                    file.delete();
+                }
+            }
+        }
+        file = new File("result.txt");
+        if(file.exists() && !file.isDirectory()) {
+            file.delete();
+        }
+        file = new File("TaxiJob.jdf");
+        if(file.exists() && !file.isDirectory()) {
+            file.delete();
+        }
     }
 
     public DefaultTableModel initTaxis(){
@@ -406,17 +462,18 @@ public class GUIFrame {
     }
 
     public DefaultTableModel initGraph(){
-        LinkedList<EdgeSimple> list = Init.getEdges();
+        LinkedList<EdgeSimple> edges = Init.getEdges();
+        edges.sort(Comparator.comparing(EdgeSimple::getSource));
         String[] columnNames = {"Vertex (A)", "Vertex (B)", "Weight"};
-        Object[][] data = new Object[list.size()][columnNames.length];
+        Object[][] data = new Object[edges.size()][columnNames.length];
         DefaultTableModel tableModel = new DefaultTableModel();
         for(var i : columnNames){
             tableModel.addColumn(i);
         }
-        for(int i = 0; i < list.size(); i++){
-            data[i][0] = list.get(i).getSource();
-            data[i][1] = list.get(i).getDestination();
-            data[i][2] = list.get(i).getWeight();
+        for(int i = 0; i < edges.size(); i++){
+            data[i][0] = edges.get(i).getSource();
+            data[i][1] = edges.get(i).getDestination();
+            data[i][2] = edges.get(i).getWeight();
             tableModel.addRow(data[i]);
         }
         return tableModel;
