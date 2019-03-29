@@ -46,7 +46,7 @@ public class App {
         Field field = Init.getField();
         int countCombination = (int)Math.pow(2, field.getNumberPassengers()) - 1; //O(2^N - 1)
         int taskCount = 0;
-        createJob();
+
         int numberVertices = Init.getNumberVertices();
         LinkedList<EdgeSimple> graph = Init.getEdges();
         for (Taxi taxi : field.getTaxis()){
@@ -91,7 +91,7 @@ public class App {
                         InputTask task = new InputTask(field.getPassengers(), new ArrayList<>(combinationsResult),
                                 taxi.getIndex(), taxi.getWeight(), numberVertices, graph);
                         String fileName = String.format("input-%s.json", ++taskCount);
-                        writeTask(taskCount);
+                        //writeTask(taskCount);
                         saveToJson(fileName, task);
                     }
                     else{
@@ -99,7 +99,7 @@ public class App {
                                 new ArrayList<>(combinationsResult.subList(i-chunk, combinationsResult.size())),
                                 taxi.getIndex(),taxi.getWeight(), numberVertices, graph);
                         String fileName = String.format("input-%s.json", ++taskCount);
-                        writeTask(taskCount);
+                        //writeTask(taskCount);
                         saveToJson(fileName, newTaskTest);
                     }
                 }
@@ -108,33 +108,40 @@ public class App {
                             new ArrayList<>(combinationsResult.subList(i, i + chunk)), taxi.getIndex(), taxi.getWeight(),
                             numberVertices, graph);
                     String fileName = String.format("input-%s.json", ++taskCount);
-                    writeTask(taskCount);
+                    //writeTask(taskCount);
                     saveToJson(fileName, newTaskTest);
                 }
             }
         }
+        createJob(taskCount);
         return taskCount;
     }
 
-    private static void createJob(){
+    private static void createJob(int count){
         try {
             Files.write(Paths.get("TaxiJob.jdf"), Arrays.asList("job:", "label: TaxiJob"),
                     Charset.forName("UTF-8"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+            List<String> initTasks = new ArrayList<>();
+            initTasks.add("init: put app.jar app.jar");
+            initTasks.add("put input-$TASK.json input-$TASK.json");
+            initTasks.add("remote: java -jar app.jar input-$TASK.json output-$TASK.json");
+            initTasks.add("final: get output-$TASK.json output-$TASK.json");
+            try {
+                Files.write(Paths.get("TaxiJob.jdf"), initTasks, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
 
-    private static void writeTask(int number){
-        List<String> lines = new ArrayList<>();
-        lines.add("task:");
-        lines.add("init: put app.jar app.jar");
-        lines.add(String.format("put input-%s.json input-%s.json", number, number));
-        lines.add(String.format("remote: java -jar app.jar input-%s.json output-$TASK.json", number));
-        lines.add("final: get output-$TASK.json output-$TASK.json");
-        try {
-            Files.write(Paths.get("TaxiJob.jdf"), lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            for(int i = 0; i < count; i++){
+                List<String> lines = new ArrayList<>();
+                lines.add("task:");
+                try {
+                    Files.write(Paths.get("TaxiJob.jdf"), lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
 
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
