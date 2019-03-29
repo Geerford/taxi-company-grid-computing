@@ -1,0 +1,13 @@
+job:
+label: TaxiJob
+init: put app.jar app.jar
+put input-$TASK.json input-$TASK.json
+remote: java -jar app.jar input-$TASK.json output-$TASK.json
+final: get output-$TASK.json output-$TASK.json
+task:
+task:
+task:
+task:
+task:
+task:
+task:

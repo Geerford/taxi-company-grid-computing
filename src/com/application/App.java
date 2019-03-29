@@ -91,7 +91,6 @@ public class App {
                         InputTask task = new InputTask(field.getPassengers(), new ArrayList<>(combinationsResult),
                                 taxi.getIndex(), taxi.getWeight(), numberVertices, graph);
                         String fileName = String.format("input-%s.json", ++taskCount);
-                        //writeTask(taskCount);
                         saveToJson(fileName, task);
                     }
                     else{
@@ -99,7 +98,6 @@ public class App {
                                 new ArrayList<>(combinationsResult.subList(i-chunk, combinationsResult.size())),
                                 taxi.getIndex(),taxi.getWeight(), numberVertices, graph);
                         String fileName = String.format("input-%s.json", ++taskCount);
-                        //writeTask(taskCount);
                         saveToJson(fileName, newTaskTest);
                     }
                 }
@@ -108,7 +106,6 @@ public class App {
                             new ArrayList<>(combinationsResult.subList(i, i + chunk)), taxi.getIndex(), taxi.getWeight(),
                             numberVertices, graph);
                     String fileName = String.format("input-%s.json", ++taskCount);
-                    //writeTask(taskCount);
                     saveToJson(fileName, newTaskTest);
                 }
             }

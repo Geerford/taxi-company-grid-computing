@@ -1,0 +1,5 @@
+peer:
+	label: Peer
+	#Peer machine fully qualified domain name (or ip-address)
+	name : grid-peer		
+	port : 3081

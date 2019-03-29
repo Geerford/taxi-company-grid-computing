@@ -1,0 +1,4 @@
+127.0.0.1	grid-peer		#localhost
+15.0.0.2	grid-broker		#broker ip-address
+15.0.0.3	grid-worker1	#worker1 ip-address
+15.0.0.4	grid-worker2	#worker2 ip-address

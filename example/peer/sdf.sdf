@@ -1,0 +1,14 @@
+gumdefaults:
+    site: 15.0.0.15	#domain
+    type: ualinux
+    port: 3080
+    os: linux
+    remExec : ssh -x $machine $command
+    copyFrom : scp $machine:$remotefile $localfile
+    copyTo : scp $localfile $machine:$remotefile
+
+gum:
+    name: 15.0.0.3	#worker ip-address
+
+gum:
+    name: 15.0.0.4	#worker ip-address
